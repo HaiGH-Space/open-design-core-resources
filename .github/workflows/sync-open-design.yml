@@ -1,0 +1,48 @@
+name: Sync Folders from nexu-io/open-design
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Auto run 00:00 UTC every day
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+
+      - name: Get folders from source repo (Sparse Checkout)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Clone source repo only required folders (Sparse Checkout)
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/nexu-io/open-design.git temp_upstream
+          cd temp_upstream
+          git sparse-checkout set craft design-systems design-templates packages prompt-templates skills
+          cd ..
+
+          # Replace new data into folders in the repo
+          FOLDERS="craft design-systems design-templates packages prompt-templates skills"
+          for folder in $FOLDERS; do
+            if [ -d "temp_upstream/$folder" ]; then
+              rm -rf "$folder"
+              cp -r "temp_upstream/$folder" ./
+            fi
+          done
+
+          rm -rf temp_upstream
+
+      - name: Commit and Push changes
+        run: |
+          git add craft design-systems design-templates packages prompt-templates skills
+          if git diff --staged --quiet; then
+            echo "No changes from nexu-io/open-design"
+          else
+            git commit -m "Auto sync specified folders from nexu-io/open-design"
+            git push
+          fi

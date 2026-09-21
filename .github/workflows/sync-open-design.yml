@@ -23,11 +23,11 @@ jobs:
           # Clone source repo only required folders (Sparse Checkout)
           git clone --depth 1 --filter=blob:none --sparse https://github.com/nexu-io/open-design.git temp_upstream
           cd temp_upstream
-          git sparse-checkout set craft design-systems design-templates packages prompt-templates skills
+          git sparse-checkout set craft design-systems design-templates packages/contracts/src/design-systems prompt-templates skills
           cd ..
 
           # Replace new data into folders in the repo
-          FOLDERS="craft design-systems design-templates packages prompt-templates skills"
+          FOLDERS="craft design-systems design-templates packages/contracts/src/design-systems prompt-templates skills"
           for folder in $FOLDERS; do
             if [ -d "temp_upstream/$folder" ]; then
               rm -rf "$folder"

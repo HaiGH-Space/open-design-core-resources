@@ -39,7 +39,7 @@ jobs:
 
       - name: Commit and Push changes
         run: |
-          git add craft design-systems design-templates packages prompt-templates skills
+          git add craft design-systems design-templates packages/contracts/src/design-systems prompt-templates skills
           if git diff --staged --quiet; then
             echo "No changes from nexu-io/open-design"
           else

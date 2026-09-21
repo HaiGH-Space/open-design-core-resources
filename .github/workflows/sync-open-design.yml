@@ -1,4 +1,4 @@
-name: Sync Folders from nexu-io/open-design
+name: Sync Selected Folders from nexu-io/open-design
 
 on:
   schedule:
@@ -15,34 +15,36 @@ jobs:
       - name: Checkout current repo
         uses: actions/checkout@v4
 
-      - name: Get folders from source repo (Sparse Checkout)
+      - name: Sparse Checkout and Copy folders from Upstream
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Clone source repo only required folders (Sparse Checkout)
+          # Clone required folders from source repo (Sparse Checkout)
           git clone --depth 1 --filter=blob:none --sparse https://github.com/nexu-io/open-design.git temp_upstream
           cd temp_upstream
           git sparse-checkout set craft design-systems design-templates packages/contracts/src/design-systems prompt-templates skills
           cd ..
 
-          # Replace new data into folders in the repo
-          FOLDERS="craft design-systems design-templates packages/contracts/src/design-systems prompt-templates skills"
-          for folder in $FOLDERS; do
-            if [ -d "temp_upstream/$folder" ]; then
-              rm -rf "$folder"
-              cp -r "temp_upstream/$folder" ./
-            fi
-          done
+          # Create destination folders if not exists
+          mkdir -p craft design-systems design-templates packages/contracts/src/design-systems prompt-templates skills
+
+          # Sync data to current repo
+          rsync -av --delete temp_upstream/craft/ ./craft/
+          rsync -av --delete temp_upstream/design-systems/ ./design-systems/
+          rsync -av --delete temp_upstream/design-templates/ ./design-templates/
+          rsync -av --delete temp_upstream/packages/contracts/src/design-systems/ ./packages/contracts/src/design-systems/
+          rsync -av --delete temp_upstream/prompt-templates/ ./prompt-templates/
+          rsync -av --delete temp_upstream/skills/ ./skills/
 
           rm -rf temp_upstream
 
       - name: Commit and Push changes
         run: |
-          git add craft design-systems design-templates packages/contracts/src/design-systems prompt-templates skills
+          git add .
           if git diff --staged --quiet; then
             echo "No changes from nexu-io/open-design"
           else
-            git commit -m "Auto sync specified folders from nexu-io/open-design"
+            git commit -m "Auto sync selected folders from nexu-io/open-design"
             git push
           fi
